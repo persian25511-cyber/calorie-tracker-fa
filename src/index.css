@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  --bg: #0C0C0D;
+  --card: #161618;
+  --card-2: #1C1C20;
+  --border: #26262A;
+  --text: #FFFFFF;
+  --muted: #A1A1AA;
+  --cal: #FF9F45;
+  --pro: #A78BFA;
+  --carb: #4ADE80;
+  --fat: #F472B6;
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+html, body, #root { min-height: 100%; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Vazirmatn', ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+input::placeholder { color: #6E6E76; }
+
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 1.25rem; }
+.card-soft { background: var(--card-2); border: 1px solid var(--border); border-radius: 1rem; }
+.field {
+  width: 100%;
+  background: #101012;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  padding: 0.7rem 0.9rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.field:focus { border-color: #4A4A52; box-shadow: 0 0 0 3px rgba(255,255,255,.04); }
+.btn-primary {
+  background: var(--cal); color: #201303; font-weight: 800;
+  border-radius: 0.9rem; padding: 0.7rem 1.1rem;
+  transition: filter .15s, transform .1s;
+}
+.btn-primary:hover { filter: brightness(1.07); }
+.btn-primary:active { transform: scale(.98); }
+.btn-ghost {
+  background: var(--card-2); color: #D4D4D8; border: 1px solid var(--border);
+  border-radius: 0.8rem; padding: 0.5rem 0.8rem;
+  transition: background .15s;
+}
+.btn-ghost:hover { background: #26262B; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #2E2E34; border-radius: 99px; }
+
+@keyframes chip-in { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+.chip-in { animation: chip-in .22s ease-out both; }
+
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.toast-in { animation: toast-in .25s ease-out both; }
+
+.safe-bottom { padding-bottom: calc(6.5rem + env(safe-area-inset-bottom)); }

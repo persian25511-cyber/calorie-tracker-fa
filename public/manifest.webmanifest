@@ -1,0 +1,16 @@
+{
+  "name": "کالری‌شمار روزمره",
+  "short_name": "کالری‌شمار",
+  "description": "ردیاب کالری و تغذیه غذاهای ایرانی",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0C0C0D",
+  "theme_color": "#0C0C0D",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
