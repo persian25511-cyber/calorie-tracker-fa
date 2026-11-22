@@ -1,3 +1,4 @@
+import fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
 import { IRANIAN_FOODS } from '../data/iranianFoods'
 import {
@@ -75,6 +76,40 @@ describe('quantity parsing', () => {
   it('parses fractional digits', () => {
     expect(parse('1/2 لیوان شیر')[0].quantity).toBe(0.5)
     expect(parse('1.5 کاسه ماست')[0].quantity).toBe(1.5)
+  })
+})
+
+describe('colloquial input and robustness', () => {
+  it('handles everyday spoken forms', () => {
+    expect(parse('دو تا سیب')[0].quantity).toBe(2)
+    expect(parse('نصفه لیوان شیر')[0].quantity).toBe(0.5)
+    expect(parse('مشتی بادام')[0].unit).toBe('مشت')
+    const kg = parse('یک کیلو سیب')[0]
+    expect(kg.grams).toBe(1000)
+    expect(kg.unit).toBe('کیلو')
+  })
+
+  it('does not split food names that contain «و»', () => {
+    const [item] = parse('یک کفگیر خورشت مرغ و آلو')
+    expect(item.foodId).toBe('morgh-alo')
+    expect(item.quantity).toBe(1)
+  })
+
+  it('can log every food with its default unit (property test)', () => {
+    fc.assert(
+      fc.property(fc.constantFrom(...IRANIAN_FOODS), fc.integer({ min: 1, max: 20 }), (food, half) => {
+        const quantity = half / 2
+        const unit = food.units.find((u) => u.name === food.defaultUnit)!
+        const text = `${toPersianDigits(quantity)} ${food.defaultUnit} ${food.name}`
+        const items = parsePersianFood(text, IRANIAN_FOODS)
+        return (
+          items.length === 1 &&
+          items[0].foodId === food.id &&
+          Math.abs(items[0].grams - quantity * unit.grams) < 0.2
+        )
+      }),
+      { numRuns: 120 },
+    )
   })
 })
 
@@ -194,7 +229,7 @@ describe('fuzzy matching and robustness', () => {
 
 describe('food database', () => {
   it('ships at least 50 realistic Iranian foods', () => {
-    expect(IRANIAN_FOODS.length).toBeGreaterThanOrEqual(50)
+    expect(IRANIAN_FOODS.length).toBeGreaterThanOrEqual(80)
     expect(new Set(IRANIAN_FOODS.map((f) => f.id)).size).toBe(IRANIAN_FOODS.length)
   })
 

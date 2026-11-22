@@ -34,6 +34,11 @@ export function dateKey(date = new Date()): string {
   return `${y}-${m}-${d}`
 }
 
+export function shiftDateKey(key: string, days: number): string {
+  const [y, m, d] = key.split('-').map(Number)
+  return dateKey(new Date(y, m - 1, d + days))
+}
+
 export function clockTime(ts: number): string {
   return new Intl.DateTimeFormat('fa-IR', {
     hour: 'numeric', minute: '2-digit', hour12: true,

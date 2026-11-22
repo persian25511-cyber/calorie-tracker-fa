@@ -2,6 +2,8 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Flame } from 'lucide-react'
 import BottomNav, { type Tab } from './components/BottomNav'
 import Dashboard from './components/Dashboard'
+import EditMealDialog from './components/EditMealDialog'
+import Onboarding from './components/Onboarding'
 import QuickLog from './components/QuickLog'
 import type { Food } from './data/iranianFoods'
 import { dateKey, fa, jalaliDate } from './utils/format'
@@ -29,6 +31,7 @@ const DEFAULT_SUGGESTIONS = [
   'نصف لیوان دوغ و دو عدد خرما',
 ]
 
+const ONBOARD_KEY = 'calorie-tracker:onboarded'
 const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
 function Loading() {
@@ -44,13 +47,36 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('home')
   const [toast, setToast] = useState('')
   const [today, setToday] = useState(() => new Date())
+  const [selectedDate, setSelectedDate] = useState(() => dateKey())
+  const [undo, setUndo] = useState<{ entry: MealEntry; index: number } | null>(null)
+  const [editing, setEditing] = useState<MealEntry | null>(null)
+  const [foodPrefill, setFoodPrefill] = useState<string | null>(null)
+  const [onboarding, setOnboarding] = useState(() => {
+    try { return localStorage.getItem(ONBOARD_KEY) !== '1' } catch { return false }
+  })
   const storageWarned = useRef(false)
+  const stateRef = useRef(state)
+
+  useEffect(() => { stateRef.current = state }, [state])
 
   useEffect(() => {
-    if (!saveState(state) && !storageWarned.current) {
-      storageWarned.current = true
-      setToast('ذخیرهٔ محلی ممکن نیست. از تنظیمات پشتیبان بگیرید.')
+    const flush = () => saveState(stateRef.current)
+    window.addEventListener('pagehide', flush)
+    window.addEventListener('beforeunload', flush)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      window.removeEventListener('beforeunload', flush)
     }
+  }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (!saveState(state) && !storageWarned.current) {
+        storageWarned.current = true
+        setToast('ذخیرهٔ محلی ممکن نیست. از تنظیمات پشتیبان بگیرید.')
+      }
+    }, 250)
+    return () => window.clearTimeout(timer)
   }, [state])
 
   useEffect(() => {
@@ -60,6 +86,12 @@ export default function App() {
   }, [toast])
 
   useEffect(() => {
+    if (!undo) return
+    const timer = window.setTimeout(() => setUndo(null), 5000)
+    return () => window.clearTimeout(timer)
+  }, [undo])
+
+  useEffect(() => {
     const onUpdate = () => setToast('نسخهٔ جدید موجود است، صفحه را بارگذاری مجدد کنید')
     window.addEventListener('app-update-available', onUpdate)
     return () => window.removeEventListener('app-update-available', onUpdate)
@@ -67,7 +99,10 @@ export default function App() {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      if (dateKey(new Date()) !== dateKey(today)) setToday(new Date())
+      if (dateKey(new Date()) !== dateKey(today)) {
+        setToday(new Date())
+        setSelectedDate(dateKey())
+      }
     }, 60_000)
     return () => window.clearInterval(timer)
   }, [today])
@@ -103,7 +138,7 @@ export default function App() {
       }
     }
     const items = [...grouped.values()]
-    const entry: MealEntry = { id: newId(), date: dateKey(today), meal, items, loggedAt: Date.now() }
+    const entry: MealEntry = { id: newId(), date: selectedDate, meal, items, loggedAt: Date.now() }
     setState((prev) => ({ ...prev, entries: [entry, ...prev.entries] }))
     const total = items.reduce((s, i) => s + i.kcal, 0)
     setToast(`✅ ${meal} ثبت شد · ${fa(total)} کیلوکالری`)
@@ -114,8 +149,28 @@ export default function App() {
   }
 
   const handleDelete = (id: string) => {
+    const index = state.entries.findIndex((e) => e.id === id)
+    if (index < 0) return
+    setUndo({ entry: state.entries[index], index })
     setState((prev) => ({ ...prev, entries: prev.entries.filter((e) => e.id !== id) }))
     setToast('وعده حذف شد')
+  }
+
+  const handleUndo = () => {
+    if (!undo) return
+    setState((prev) => {
+      const entries = [...prev.entries]
+      entries.splice(Math.min(undo.index, entries.length), 0, undo.entry)
+      return { ...prev, entries }
+    })
+    setUndo(null)
+    setToast('وعده بازگردانده شد')
+  }
+
+  const handleEditSave = (entry: MealEntry) => {
+    setState((prev) => ({ ...prev, entries: prev.entries.map((e) => (e.id === entry.id ? entry : e)) }))
+    setEditing(null)
+    setToast('تغییرات ذخیره شد')
   }
 
   const handleSaveFood = (food: Food) => {
@@ -125,6 +180,7 @@ export default function App() {
         ? prev.foods.map((f) => (f.id === food.id ? food : f))
         : [...prev.foods, food],
     }))
+    setFoodPrefill(null)
     setToast(`غذای «${food.name}» ذخیره شد`)
   }
 
@@ -133,7 +189,21 @@ export default function App() {
     setToast('غذا حذف شد')
   }
 
-  const handleImport = (text: string) => setState(parseBackup(text))
+  const handleDefineFood = (name: string) => {
+    setFoodPrefill(name)
+    setTab('foods')
+  }
+
+  const finishOnboarding = (kcal: number) => {
+    setState((prev) => ({ ...prev, goals: { ...prev.goals, kcal } }))
+    try { localStorage.setItem(ONBOARD_KEY, '1') } catch { /* ignore */ }
+    setOnboarding(false)
+  }
+
+  const handleImport = (text: string) => {
+    setState(parseBackup(text))
+    setToast('دادهها بازیابی شدند')
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg)]">
@@ -144,7 +214,7 @@ export default function App() {
               <Flame size={19} fill="currentColor" strokeWidth={1.5} />
             </span>
             <div>
-              <h1 className="text-sm font-extrabold leading-tight">کالری‌شمار روزمره</h1>
+              <h1 className="text-sm font-extrabold leading-tight">کالریشمار روزمره</h1>
               <p className="num text-[10px] text-[var(--muted)]">{jalaliDate(today)}</p>
             </div>
           </div>
@@ -157,12 +227,15 @@ export default function App() {
       <main className="mx-auto max-w-2xl px-3 pt-4 pb-28 sm:px-4 lg:max-w-4xl safe-bottom">
         {tab === 'home' && (
           <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-            <QuickLog foods={state.foods} suggestions={suggestions} onLog={handleLog} />
+            <QuickLog foods={state.foods} suggestions={suggestions} onLog={handleLog} onDefineFood={handleDefineFood} />
             <Dashboard
               state={state}
               today={today}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
               onDelete={handleDelete}
               onRepeat={handleRepeat}
+              onEdit={setEditing}
               onSettings={() => setTab('settings')}
             />
           </div>
@@ -172,7 +245,13 @@ export default function App() {
         )}
         {tab === 'foods' && (
           <Suspense fallback={<Loading />}>
-            <FoodBank foods={state.foods} onSave={handleSaveFood} onDelete={handleDeleteFood} />
+            <FoodBank
+              key={foodPrefill ?? 'foods'}
+              foods={state.foods}
+              onSave={handleSaveFood}
+              onDelete={handleDeleteFood}
+              initialName={foodPrefill ?? undefined}
+            />
           </Suspense>
         )}
         {tab === 'settings' && (
@@ -181,18 +260,28 @@ export default function App() {
               state={state}
               onGoals={(goals: Goals) => setState((prev) => ({ ...prev, goals }))}
               onImport={handleImport}
-              onReset={() => setState(initialState())}
+              onReset={() => { setState(initialState()); setToast('دادهها بازنشانی شدند') }}
               notify={setToast}
             />
           </Suspense>
         )}
       </main>
 
-      {toast && (
-        <div className="toast-in fixed right-1/2 bottom-24 z-40 w-max max-w-[90vw] translate-x-1/2 rounded-xl border border-[var(--border)] bg-[#1C1C20] px-4 py-2 text-center text-xs shadow-2xl">
-          {toast}
+      {(toast || undo) && (
+        <div className="toast-in fixed right-1/2 bottom-24 z-40 flex w-max max-w-[90vw] translate-x-1/2 items-center gap-2 rounded-xl border border-[var(--border)] bg-[#1C1C20] px-4 py-2 text-center text-xs shadow-2xl" role="status" aria-live="polite">
+          <span>{toast}</span>
+          {undo && (
+            <button type="button" onClick={handleUndo} className="rounded-md bg-[var(--cal)] px-2 py-0.5 text-[10px] font-bold text-[#201303]">
+              بازگردانی
+            </button>
+          )}
         </div>
       )}
+
+      {editing && (
+        <EditMealDialog entry={editing} foods={state.foods} onSave={handleEditSave} onClose={() => setEditing(null)} />
+      )}
+      {onboarding && <Onboarding onDone={finishOnboarding} />}
 
       <BottomNav active={tab} onChange={setTab} todayCount={todayCount} />
     </div>

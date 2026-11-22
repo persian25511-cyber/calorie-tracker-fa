@@ -17,6 +17,8 @@ npm run dev      # http://localhost:5173
 npm test         # تستهای واحد
 npm run test:coverage
 npm run build
+npm run test:coverage
+npm run e2e
 npm start        # preview روی http://localhost:4173
 ```
 
@@ -27,6 +29,16 @@ npm start        # preview روی http://localhost:4173
 - ۵۱ غذای ایرانی، ویرایش کامل و غذای سفارشی با واحد دلخواه.
 - حلقهٔ کالری، میلههای درشت مغذی، وعدهها، نمودار ۷ روزه و اهداف.
 - خروجی/بازیابی JSON، PWA نصبپذیر و فونت self-hosted (کارکرد آفلاین).
+
+### مستندات بیشتر
+
+- [راهنمای کاربر](docs/USER_GUIDE.md)
+- [ساختار-data و JSON](docs/DATA_SCHEMA.md)
+- [نقشهٔ راه](ROADMAP.md)
+
+### GitHub Pages
+
+.github/workflows/pages.yml با `VITE_BASE=/calorie-tracker-fa/` بیلد میسازد و `404.html` را برای SPA اضافه میکند. در تنظیمات مخزن، Pages را روی «GitHub Actions» بگذارید.
 
 ### استقرار روی Vercel
 
@@ -81,6 +93,11 @@ npm run dev
 npm test
 npm run build
 ```
+
+### Docs
+
+- [User guide](docs/USER_GUIDE.md), [data schema](docs/DATA_SCHEMA.md), [roadmap](ROADMAP.md).
+- E2E: `npm run e2e` (16 flows, mobile + desktop).
 
 ### Deploy to Vercel
 

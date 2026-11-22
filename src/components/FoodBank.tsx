@@ -13,6 +13,7 @@ type Props = {
   foods: Food[]
   onSave: (food: Food) => void
   onDelete: (id: string) => void
+  initialName?: string
 }
 
 type Draft = {
@@ -57,10 +58,10 @@ const toDraft = (food: Food): Draft => ({
   isCustom: Boolean(food.isCustom),
 })
 
-export default function FoodBank({ foods, onSave, onDelete }: Props) {
+export default function FoodBank({ foods, onSave, onDelete, initialName }: Props) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<FoodCategory | 'all'>('all')
-  const [draft, setDraft] = useState<Draft | null>(null)
+  const [draft, setDraft] = useState<Draft | null>(() => initialName ? { ...emptyDraft(), name: initialName } : null)
   const [error, setError] = useState('')
 
   const results = useMemo(() => {
@@ -292,6 +293,7 @@ export default function FoodBank({ foods, onSave, onDelete }: Props) {
               <span className="text-[var(--carb)]">ک: {fa(food.per100g.carbs)}</span>
               <span className="text-[var(--fat)]">چ: {fa(food.per100g.fat)}</span>
               <span className="text-[var(--muted)]">هر ۱۰۰ گرم</span>
+              <span className="text-[var(--muted)]">{food.source ?? 'تخمینی'}</span>
             </div>
             <div className="num mt-1.5 flex flex-wrap gap-1.5">
               {food.units.map((u) => (

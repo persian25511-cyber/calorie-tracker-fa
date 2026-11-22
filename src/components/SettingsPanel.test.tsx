@@ -31,14 +31,12 @@ describe('SettingsPanel', () => {
     click.mockRestore()
   })
 
-  it('resets only after confirmation', () => {
+  it('resets only after the in-app confirmation', () => {
     const { onReset } = setup()
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     fireEvent.click(screen.getByRole('button', { name: /بازنشانی کامل/ }))
+    expect(screen.getByRole('dialog', { name: 'تأیید بازنشانی' })).toBeInTheDocument()
     expect(onReset).not.toHaveBeenCalled()
-    confirm.mockReturnValue(true)
-    fireEvent.click(screen.getByRole('button', { name: /بازنشانی کامل/ }))
+    fireEvent.click(screen.getByRole('button', { name: /بله، بازنشانی کن/ }))
     expect(onReset).toHaveBeenCalled()
-    confirm.mockRestore()
   })
 })

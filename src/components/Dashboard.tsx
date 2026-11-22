@@ -1,4 +1,4 @@
-import { Clock, Flame, RotateCcw, Target, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Clock, Flame, Pencil, RotateCcw, Target, Trash2 } from 'lucide-react'
 import { fa, clockTime, dateKey, jalaliDate, jalaliWeekday } from '../utils/format'
 import { MEAL_TYPES, type AppState, type MealEntry } from '../utils/storage'
 import ProgressRing from './ProgressRing'
@@ -6,8 +6,11 @@ import ProgressRing from './ProgressRing'
 type Props = {
   state: AppState
   today: Date
+  selectedDate: string
+  onSelectDate: (key: string) => void
   onDelete: (id: string) => void
   onRepeat: (entry: MealEntry) => void
+  onEdit: (entry: MealEntry) => void
   onSettings: () => void
 }
 
@@ -17,8 +20,16 @@ const MACROS = [
   { key: 'fat', label: 'چربی', color: 'var(--fat)', unit: 'g' },
 ] as const
 
-export default function Dashboard({ state, today, onDelete, onRepeat, onSettings }: Props) {
-  const todayEntries = state.entries.filter((e) => e.date === dateKey(today))
+export default function Dashboard({ state, today, selectedDate, onSelectDate, onDelete, onRepeat, onEdit, onSettings }: Props) {
+  const todayEntries = state.entries.filter((e) => e.date === selectedDate)
+  const [sy, sm, sd] = selectedDate.split('-').map(Number)
+  const selected = new Date(sy, sm - 1, sd)
+
+  const shiftDate = (days: number) => {
+    const [y, m, d] = selectedDate.split('-').map(Number)
+    const next = new Date(y, m - 1, d + days)
+    onSelectDate(dateKey(next))
+  }
 
   const totals = todayEntries.reduce(
     (acc, e) => {
@@ -36,11 +47,32 @@ export default function Dashboard({ state, today, onDelete, onRepeat, onSettings
   return (
     <div className="space-y-4">
       <section className="card overflow-hidden">
-        <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-2.5">
-          <div>
-            <p className="text-[11px] text-[var(--muted)]">{jalaliWeekday(today)}</p>
-            <p className="num text-xs font-semibold">{jalaliDate(today)}</p>
+        <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-2.5">
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={() => shiftDate(1)} aria-label="روز بعد" className="rounded-lg bg-[#1C1C20] p-1.5">
+              <ChevronRight size={14} />
+            </button>
+            <label className="sr-only" htmlFor="log-date">تاریخ وعده</label>
+            <input
+              id="log-date"
+              type="date"
+              dir="ltr"
+              value={selectedDate}
+              onChange={(e) => e.target.value && onSelectDate(e.target.value)}
+              className="field num !w-auto px-2 py-1 text-[11px]"
+              aria-label="انتخاب تاریخ"
+            />
+            <button type="button" onClick={() => shiftDate(-1)} aria-label="روز قبل" className="rounded-lg bg-[#1C1C20] p-1.5">
+              <ChevronLeft size={14} />
+            </button>
           </div>
+          <button
+            type="button"
+            onClick={() => onSelectDate(dateKey(today))}
+            className="rounded-full bg-[#1C1C20] px-2 py-1 text-[10px] text-[#B8B8C0]"
+          >
+            امروز
+          </button>
           <button
             type="button"
             onClick={onSettings}
@@ -49,6 +81,10 @@ export default function Dashboard({ state, today, onDelete, onRepeat, onSettings
             <Target size={12} />
             هدف: <span className="num">{fa(state.goals.kcal)}</span>
           </button>
+        </div>
+        <div className="px-4 pt-2 text-[11px] text-[var(--muted)]">
+          {selectedDate === dateKey(today) ? jalaliWeekday(today) : 'تاریخ انتخابشده'} ·{' '}
+          <span className="num">{jalaliDate(selected)}</span>
         </div>
 
         <div className="flex flex-col items-center gap-5 px-4 py-5 sm:flex-row sm:justify-around">
@@ -133,6 +169,13 @@ export default function Dashboard({ state, today, onDelete, onRepeat, onSettings
                               className="btn-ghost num flex items-center gap-1 px-2 py-1 text-[10px]"
                             >
                               <RotateCcw size={11} /> تکرار
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onEdit(entry)}
+                              className="btn-ghost flex items-center gap-1 px-2 py-1 text-[10px]"
+                            >
+                              <Pencil size={11} /> ویرایش
                             </button>
                             <button
                               type="button"

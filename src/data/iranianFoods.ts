@@ -34,6 +34,9 @@ export type Food = {
   units: FoodUnit[]
   defaultUnit: string
   isCustom?: boolean
+  /** Reference for the nutrition values; absent means an unverified estimate. */
+  source?: string
+  confidence?: 'estimate' | 'reference'
 }
 
 export const CATEGORY_LABELS: Record<FoodCategory, string> = {
@@ -51,7 +54,7 @@ export const CATEGORY_LABELS: Record<FoodCategory, string> = {
 const m = (kcal: number, protein: number, carbs: number, fat: number): Macro => ({ kcal, protein, carbs, fat })
 const u = (name: string, grams: number, aliases: string[] = []): FoodUnit => ({ name, grams, aliases })
 
-export const IRANIAN_FOODS: Food[] = [
+const BASE_FOODS: Food[] = [
   // ── Stews & main dishes ───────────────────────────────────────────
   {
     id: 'ghormeh-sabzi', name: 'قورمه سبزی', aliases: ['قورمهسبزی', 'قورمه', 'گورمه سبزی'],
@@ -370,6 +373,136 @@ export const IRANIAN_FOODS: Food[] = [
     defaultUnit: 'قاشق غذاخوری',
   },
 ]
+
+/* Additional everyday Iranian foods (sources are curated later in phase 2). */
+const EXTRA_FOODS: Food[] = [
+  {
+    id: 'alo-esfenaj', name: 'خورشت آلو اسفناج', aliases: ['آلو اسفناج', 'خورشت آلو'],
+    category: 'stew', per100g: m(140, 6, 12, 9), units: [u('کفگیر', 180), u('کاسه', 220)], defaultUnit: 'کفگیر',
+  },
+  {
+    id: 'morgh-alo', name: 'خورشت مرغ و آلو', aliases: ['خورشت آلو', 'مرغ و آلو'],
+    category: 'stew', per100g: m(160, 9, 13, 8), units: [u('کفگیر', 180)], defaultUnit: 'کفگیر',
+  },
+  {
+    id: 'gheimeh-nokhodi', name: 'قیمه نخودی', aliases: ['قیمه نخود'],
+    category: 'stew', per100g: m(150, 7, 16, 6), units: [u('کفگیر', 180)], defaultUnit: 'کفگیر',
+  },
+  {
+    id: 'shooid-polo', name: 'شوید پلو', aliases: ['شویدپلو'],
+    category: 'stew', per100g: m(170, 8, 25, 5), units: [u('کفگیر', 200)], defaultUnit: 'کفگیر',
+  },
+  {
+    id: 'abgoosht', name: 'آبگوشت', aliases: ['آب گوشت'],
+    category: 'soup', per100g: m(95, 6, 8, 4), units: [u('کاسه', 300), u('پیاله', 250)], defaultUnit: 'کاسه',
+  },
+  {
+    id: 'halim', name: 'حلیم', aliases: [],
+    category: 'breakfast', per100g: m(130, 7, 18, 3), units: [u('کاسه', 300)], defaultUnit: 'کاسه',
+  },
+  {
+    id: 'shir-berenj', name: 'شیر برنج', aliases: ['شیربرنج'],
+    category: 'breakfast', per100g: m(110, 3, 18, 3), units: [u('کاسه', 250)], defaultUnit: 'کاسه',
+  },
+  {
+    id: 'ferni', name: 'فرنی', aliases: [],
+    category: 'breakfast', per100g: m(90, 3, 14, 2), units: [u('کاسه', 200)], defaultUnit: 'کاسه',
+  },
+  {
+    id: 'kabab-chenjeh', name: 'کباب چنجه', aliases: ['چنجه'],
+    category: 'kebab_protein', per100g: m(240, 24, 2, 15), units: [u('سیخ', 120)], defaultUnit: 'سیخ',
+  },
+  {
+    id: 'kabab-shishlik', name: 'کباب شیشلیک', aliases: ['شیشلیک'],
+    category: 'kebab_protein', per100g: m(260, 22, 2, 18), units: [u('سیخ', 150)], defaultUnit: 'سیخ',
+  },
+  {
+    id: 'morgh-shekampor', name: 'مرغ شکمپر', aliases: ['مرغ شکم پر'],
+    category: 'kebab_protein', per100g: m(190, 18, 10, 10), units: [u('تکه', 120)], defaultUnit: 'تکه',
+  },
+  {
+    id: 'mahi-kabab', name: 'ماهی کباب', aliases: ['کباب ماهی'],
+    category: 'kebab_protein', per100g: m(180, 22, 1, 9), units: [u('تکه', 120)], defaultUnit: 'تکه',
+  },
+  {
+    id: 'migu-kabab', name: 'میگو کباب', aliases: ['کباب میگو'],
+    category: 'kebab_protein', per100g: m(150, 24, 1, 5), units: [u('سیخ', 80)], defaultUnit: 'سیخ',
+  },
+  {
+    id: 'kabab-kobideh-morgh', name: 'کباب کوبیده مرغ', aliases: ['کوبیده مرغ'],
+    category: 'kebab_protein', per100g: m(200, 24, 2, 11), units: [u('سیخ', 100)], defaultUnit: 'سیخ',
+  },
+  {
+    id: 'berenj-zafarani', name: 'برنج زعفرانی', aliases: ['برنج زعفرونی'],
+    category: 'rice_bread', per100g: m(140, 2.6, 29, 0.5), units: [u('کفگیر', 170), u('کاسه', 220)], defaultUnit: 'کفگیر',
+  },
+  {
+    id: 'nan-shirmal', name: 'نان شیرمال', aliases: ['شیرمال'],
+    category: 'rice_bread', per100g: m(320, 8, 45, 13), units: [u('کف دست', 40)], defaultUnit: 'کف دست',
+  },
+  {
+    id: 'nan-nokhodi', name: 'نان نخودی', aliases: [],
+    category: 'rice_bread', per100g: m(280, 9, 46, 8), units: [u('کف دست', 40)], defaultUnit: 'کف دست',
+  },
+  {
+    id: 'nan-joo', name: 'نان جو', aliases: [],
+    category: 'rice_bread', per100g: m(250, 9, 45, 3), units: [u('کف دست', 45)], defaultUnit: 'کف دست',
+  },
+  {
+    id: 'jam', name: 'مربا', aliases: ['مربای خانگی'],
+    category: 'breakfast', per100g: m(250, 0.5, 65, 0), units: [u('قاشق غذاخوری', 20)], defaultUnit: 'قاشق غذاخوری',
+  },
+  {
+    id: 'shereh', name: 'شیره انگور', aliases: ['شیره'],
+    category: 'breakfast', per100g: m(300, 0, 75, 0), units: [u('قاشق غذاخوری', 20)], defaultUnit: 'قاشق غذاخوری',
+  },
+  {
+    id: 'anjir-khoshk', name: 'انجیر خشک', aliases: ['انجیر'],
+    category: 'snack', per100g: m(260, 3, 65, 1), units: [u('عدد', 15)], defaultUnit: 'عدد',
+  },
+  {
+    id: 'keshmesh', name: 'کشمش', aliases: [],
+    category: 'snack', per100g: m(300, 2, 79, 0.5), units: [u('قاشق غذاخوری', 12)], defaultUnit: 'قاشق غذاخوری',
+  },
+  {
+    id: 'fandogh', name: 'فندق', aliases: [],
+    category: 'snack', per100g: m(628, 15, 17, 61), units: [u('مشت', 25)], defaultUnit: 'مشت',
+  },
+  {
+    id: 'takhm-kadoo', name: 'تخم کدو', aliases: [],
+    category: 'snack', per100g: m(550, 19, 10, 49), units: [u('قاشق غذاخوری', 10)], defaultUnit: 'قاشق غذاخوری',
+  },
+  {
+    id: 'golab', name: 'گلاب', aliases: [],
+    category: 'drink', per100g: m(2, 0, 0.5, 0), units: [u('لیوان', 200)], defaultUnit: 'لیوان',
+  },
+  {
+    id: 'noshabeh', name: 'نوشابه', aliases: [],
+    category: 'drink', per100g: m(42, 0, 10.6, 0), units: [u('لیوان', 250)], defaultUnit: 'لیوان',
+  },
+  {
+    id: 'ab-miveh', name: 'آبمیوه طبیعی', aliases: ['آب میوه'],
+    category: 'drink', per100g: m(45, 0.5, 11, 0.1), units: [u('لیوان', 250)], defaultUnit: 'لیوان',
+  },
+  {
+    id: 'panir-khamehi', name: 'پنیر خامهای', aliases: ['پنیر خامه ای'],
+    category: 'dairy', per100g: m(250, 7, 3, 24), units: [u('قاشق غذاخوری', 18)], defaultUnit: 'قاشق غذاخوری',
+  },
+  {
+    id: 'khameh', name: 'خامه', aliases: [],
+    category: 'dairy', per100g: m(340, 2, 3, 36), units: [u('قاشق غذاخوری', 15)], defaultUnit: 'قاشق غذاخوری',
+  },
+  {
+    id: 'khiaarshoor', name: 'خیارشور', aliases: [],
+    category: 'snack', per100g: m(20, 1, 3, 0.2), units: [u('عدد', 30)], defaultUnit: 'عدد',
+  },
+  {
+    id: 'salad-fasl', name: 'سالاد فصل', aliases: [],
+    category: 'snack', per100g: m(30, 1, 6, 0.2), units: [u('کاسه', 200)], defaultUnit: 'کاسه',
+  },
+]
+
+export const IRANIAN_FOODS: Food[] = [...BASE_FOODS, ...EXTRA_FOODS]
 
 export const DEFAULT_GOALS = {
   kcal: 2000,

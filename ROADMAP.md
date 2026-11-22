@@ -47,14 +47,14 @@
 
 ## فاز ۱ — تجربه و عملکرد (P1)
 
-- [ ] onboarding سهمرحلهای (هدف، ثبت نمونه، نصب PWA).
-- [ ] ویراش وعدهٔ ثبتشده و Undo برای حذف.
-- [ ] جایگزینی `window.confirm` با modal دسترسپذیر.
-- [ ] هایلایت قسمت ناشناختهٔ جمله + «همین غذا را اضافه کن».
-- [ ] ناوبری روز، تقویم Jalali، نمودار ۷/۳۰ روزه.
-- [ ] دسترسپذیری WCAG AA: لمس ۴۴px، focus RTL، aria-label، aria-live، reduced motion، تضاد ≥ ۴.۵:۱.
-- [ ] lazy loading تبها و Recharts، memoization، debounce ذخیره،بررسی باندل در CI.
-- [ ] جدا کردن state به reducer + hookهای `useEntries`/`useGoals`.
+- [x] onboarding سهمرحلهای (هدف، ثبت نمونه، نصب PWA).
+- [x] ویراش وعدهٔ ثبتشده و Undo برای حذف.
+- [x] جایگزینی `window.confirm` با modal دسترسپذیر.
+- [x] هایلایت قسمت ناشناختهٔ جمله + «همین غذا را اضافه کن».
+- [x] ناوبری روز، تقویم Jalali، نمودار ۷/۳۰ روزه.
+- [x] دسترسپذیری WCAG AA: لمس ۴۴px، focus RTL، aria-label، aria-live، reduced motion، تضاد ≥ ۴.۵:۱.
+- [x] lazy loading تبها و Recharts، memoization، debounce ذخیره،بررسی باندل در CI.
+- [x] جدا کردن state به reducer + hookهای `useEntries`/`useGoals`.
 
 **دروازه:** Lighthouse Perf ≥ ۹۰، A11y ≥ ۹۵، باندل ≤ ۲۵۰ kB، E2E موبایل/دسکتاپ سبز.
 
@@ -88,6 +88,6 @@
 - [x] ایجاد رود مپ
 - [x] اجرای فاز ۰
 - [ ] اجرای فاز ۰٫۵ (Vercel / Railway)
-- [ ] اجرای فاز ۱
-- [ ] اجرای فاز ۲
-- [ ] اجرای فاز ۳
+- [x] اجرای فاز ۱
+- [~] اجرای فاز ۲ (همهٔ موارد کدی انجام شد؛ منبعگذاری و تأیید تغذیهای نیاز به متخصص دارد)
+- [~] اجرای فاز ۳ (E2E، GitHub Pages و مستندات آمادهاند؛ بتا و نسخهٔ نهایی منوط به بازخورد کاربران)

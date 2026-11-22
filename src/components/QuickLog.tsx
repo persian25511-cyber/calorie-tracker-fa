@@ -9,9 +9,10 @@ type Props = {
   foods: Food[]
   suggestions: string[]
   onLog: (items: ParsedItem[], meal: MealType) => void
+  onDefineFood?: (name: string) => void
 }
 
-type Override = { quantity?: number; removed?: boolean }
+type Override = { quantity?: number; removed?: boolean; foodId?: string }
 
 function recalculate(item: ParsedItem, quantity: number, foods: Food[]): ParsedItem {
   const food = foods.find((f) => f.id === item.foodId)
@@ -28,7 +29,7 @@ function recalculate(item: ParsedItem, quantity: number, foods: Food[]): ParsedI
   }
 }
 
-export default function QuickLog({ foods, suggestions, onLog }: Props) {
+export default function QuickLog({ foods, suggestions, onLog, onDefineFood }: Props) {
   const [input, setInput] = useState('')
   const [overrides, setOverrides] = useState<Record<string, Override>>({})
   const [meal, setMeal] = useState<MealType>('ناهار')
@@ -39,8 +40,22 @@ export default function QuickLog({ foods, suggestions, onLog }: Props) {
     () => parsed
       .filter((item) => !overrides[item.id]?.removed)
       .map((item) => {
-        const quantity = overrides[item.id]?.quantity
-        return quantity === undefined ? item : recalculate(item, quantity, foods)
+        const override = overrides[item.id]
+        const quantity = override?.quantity
+        const result = quantity === undefined ? item : recalculate(item, quantity, foods)
+        if (!override?.foodId || override.foodId === result.foodId) return result
+        const replacement = foods.find((f) => f.id === override.foodId)
+        if (!replacement) return result
+        const factor = result.grams / 100
+        return {
+          ...result,
+          foodId: replacement.id,
+          foodName: replacement.name,
+          kcal: Math.round(replacement.per100g.kcal * factor),
+          protein: Math.round(replacement.per100g.protein * factor * 10) / 10,
+          carbs: Math.round(replacement.per100g.carbs * factor * 10) / 10,
+          fat: Math.round(replacement.per100g.fat * factor * 10) / 10,
+        }
       }),
     [parsed, overrides, foods],
   )
@@ -131,6 +146,17 @@ export default function QuickLog({ foods, suggestions, onLog }: Props) {
                         {fa(item.quantity)} × {item.unit} · {fa(item.kcal)} کیلوکالری
                       </div>
                     </div>
+                    {item.foodId === 'sweet-tea' && (
+                      <button
+                        type="button"
+                        aria-label="چای ساده"
+                        title="تغییر به چای ساده"
+                        onClick={() => setOverrides((prev) => ({ ...prev, [item.id]: { ...prev[item.id], foodId: 'plain-tea' } }))}
+                        className="rounded-md bg-[#232328] px-1 py-0.5 text-[9px] text-[#B8B8C0]"
+                      >
+                        ساده
+                      </button>
+                    )}
                     <div className="flex items-center gap-0.5 rounded-lg bg-[#1C1C20] p-0.5">
                       <button
                         type="button"
@@ -162,9 +188,20 @@ export default function QuickLog({ foods, suggestions, onLog }: Props) {
               </div>
             </>
           ) : (
-            <p className="rounded-xl border border-dashed border-[#33333A] px-3 py-2 text-[11px] text-[#9A9AA2]">
-              غذایی شناسایی نشد. نام غذا و واحد خانگی را ساده بنویسید، مثلاً «یک لیوان شیر».
-            </p>
+            <div className="rounded-xl border border-dashed border-[#33333A] px-3 py-2">
+              <p className="text-[11px] text-[#9A9AA2]">
+                غذایی شناسایی نشد. نام غذا و واحد خانگی را ساده بنویسید، مثلاً «یک لیوان شیر».
+              </p>
+              {onDefineFood && input.trim() && (
+                <button
+                  type="button"
+                  onClick={() => onDefineFood(input.trim())}
+                  className="mt-2 rounded-lg bg-[#232328] px-2 py-1 text-[10px] text-[var(--cal)]"
+                >
+                  تعریف «{input.trim()}» به عنوان غذای جدید
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}

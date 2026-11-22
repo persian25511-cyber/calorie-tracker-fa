@@ -35,6 +35,7 @@ function NumberField({ label, value, onChange }: { label: string; value: number;
 
 export default function SettingsPanel({ state, onGoals, onImport, onReset, notify }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
+  const [confirmReset, setConfirmReset] = useState(false)
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })
@@ -98,21 +99,56 @@ export default function SettingsPanel({ state, onGoals, onImport, onReset, notif
       </section>
 
       <section className="card p-4">
+        <h2 className="mb-2 flex items-center gap-2 text-sm font-bold">
+          <Info size={15} className="text-[var(--cal)]" /> حریم خصوصی و ایمنی
+        </h2>
+        <p className="text-[11px] leading-7 text-[var(--muted)]">
+          تمام دادهها فقط در همین مرورگر ذخیره میشوند و به هیچ سروری ارسال نمیشوند. هیچ ردیابی یا تحلیلی فعال نیست.
+          مقادیر تغذیهای تقریبیاند و نباید به عنوان توصیهٔ پزشکی استفاده شوند.
+        </p>
+        <p className="mt-2 text-[11px] leading-6 text-[var(--muted)]">
+          پیشنهاد میشود هر چند وقت یکبار از طریق «خروجی JSON» پشتیبان بگیرید.
+        </p>
+      </section>
+
+      <section className="card p-4">
         <h2 className="mb-2 text-sm font-bold">بازنشانی</h2>
         <p className="mb-3 text-[11px] text-[var(--muted)]">همه وعده‌ها، غذاهای سفارشی و اهداف به حالت اولیه برمیگردند.</p>
         <button
           type="button"
-          onClick={() => {
-            if (window.confirm('همه داده‌ها حذف شوند؟')) {
-              onReset()
-              notify('داده‌ها بازنشانی شدند')
-            }
-          }}
+          onClick={() => setConfirmReset(true)}
           className="btn-ghost flex items-center gap-1.5 text-xs text-[#F19A9A]"
         >
           <RotateCcw size={14} /> بازنشانی کامل
         </button>
       </section>
+
+      {confirmReset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4" role="dialog" aria-modal="true" aria-label="تأیید بازنشانی">
+          <div className="card w-full max-w-sm p-5">
+            <h3 className="text-sm font-bold">همه دادهها حذف شوند؟</h3>
+            <p className="mt-1 text-xs leading-6 text-[var(--muted)]">
+              وعدهها، غذاهای سفارشی و اهداف به حالت اولیه برمیگردند. این کار قابل بازگشت نیست.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onReset()
+                  setConfirmReset(false)
+                  notify('دادهها بازنشانی شدند')
+                }}
+                className="btn-primary flex-1 text-xs"
+              >
+                بله، بازنشانی کن
+              </button>
+              <button type="button" onClick={() => setConfirmReset(false)} className="btn-ghost px-4 text-xs">
+                لغو
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

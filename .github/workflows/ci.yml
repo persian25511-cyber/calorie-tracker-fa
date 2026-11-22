@@ -15,6 +15,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Install browser for E2E
+        run: npx playwright install --with-deps chromium
+      - name: E2E (mobile + desktop)
+        run: npm run e2e
       - name: Lint
         run: npm run lint
       - name: Tests with coverage

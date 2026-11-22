@@ -60,6 +60,7 @@ const NUMBER_WORDS: Record<string, number> = {
   نه: 9,
   ده: 10,
   نصف: 0.5,
+  نصفه: 0.5,
   نیم: 0.5,
   نیمه: 0.5,
 }
@@ -105,7 +106,8 @@ const UNIT_DEFS: Array<{ key: string; names: string[] }> = [
   { key: 'عدد', names: ['عدد', 'دانه', 'تا'] },
   { key: 'سیخ', names: ['سیخ'] },
   { key: 'تکه', names: ['تکه', 'قطعه'] },
-  { key: 'مشت', names: ['مشت'] },
+  { key: 'مشت', names: ['مشت', 'مشتی'] },
+  { key: 'کیلو', names: ['کیلو', 'کیلوگرم'] },
   { key: 'قاشق', names: ['قاشق'] },
   { key: 'گرم', names: ['گرم', 'g', 'gr'] },
 ]
@@ -238,8 +240,9 @@ function parseSegment(segment: string, foods: Food[], index: number, unitCandida
   if (!match) return null
   const food = match.food
 
-  const unitDef = unitKey === 'گرم' ? undefined : resolveUnit(food, unitKey ?? food.defaultUnit)
-  const unitGrams = unitKey === 'گرم' ? 1 : (unitDef?.grams ?? food.units[0]?.grams ?? 100)
+  const isWeight = unitKey === 'گرم' || unitKey === 'کیلو'
+  const unitDef = isWeight ? undefined : resolveUnit(food, unitKey ?? food.defaultUnit)
+  const unitGrams = unitKey === 'گرم' ? 1 : unitKey === 'کیلو' ? 1000 : (unitDef?.grams ?? food.units[0]?.grams ?? 100)
   const grams = round1(quantity * unitGrams)
   const factor = grams / 100
   const macro: Macro = food.per100g
@@ -249,7 +252,7 @@ function parseSegment(segment: string, foods: Food[], index: number, unitCandida
     foodId: food.id,
     foodName: food.name,
     quantity,
-    unit: unitKey === 'گرم' ? 'گرم' : (unitDef?.name ?? food.defaultUnit),
+    unit: isWeight ? (unitKey as string) : (unitDef?.name ?? food.defaultUnit),
     unitGrams,
     grams,
     kcal: Math.round(macro.kcal * factor),
@@ -270,12 +273,30 @@ export function parsePersianFood(input: string, foods: Food[]): ParsedItem[] {
   const results: ParsedItem[] = []
   const unitCandidates = buildUnitCandidates(foods)
 
+  // Names such as «خورشت مرغ و آلو» contain «و»; protect them before splitting.
+  const protectedNames = foods
+    .flatMap((food) => [food.name, ...food.aliases])
+    .map((name) => normalizePersian(name))
+    .filter((name) => /\s+و\s+/.test(name))
+  const placeholders = new Map<string, string>()
+
   // Split raw newlines first — normalizePersian collapses all whitespace.
   for (const line of input.split(/\r?\n+/)) {
-    const text = expandHalfExpressions(toEnglishDigits(normalizePersian(line)))
+    let text = expandHalfExpressions(toEnglishDigits(normalizePersian(line)))
+    protectedNames.forEach((name, i) => {
+      const token = `@@food${i}@@`
+      if (text.includes(name)) {
+        placeholders.set(token, name)
+        text = text.split(name).join(token)
+      }
+    })
     const segments = text
       .split(/\s*\+\s*|[,،]|\s+و\s+/)
-      .map((s) => s.trim())
+      .map((s) => {
+        let restored = s
+        for (const [token, name] of placeholders) restored = restored.split(token).join(name)
+        return restored.trim()
+      })
       .filter(Boolean)
     for (const segment of segments) {
       const item = parseSegment(segment, foods, results.length, unitCandidates)
