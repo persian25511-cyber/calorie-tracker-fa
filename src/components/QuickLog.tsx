@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Minus, Plus, Sparkles, X } from 'lucide-react'
 import type { Food } from '../data/iranianFoods'
 import { fa } from '../utils/format'
@@ -10,6 +10,8 @@ type Props = {
   suggestions: string[]
   onLog: (items: ParsedItem[], meal: MealType) => void
 }
+
+type Override = { quantity?: number; removed?: boolean }
 
 function recalculate(item: ParsedItem, quantity: number, foods: Food[]): ParsedItem {
   const food = foods.find((f) => f.id === item.foodId)
@@ -28,31 +30,45 @@ function recalculate(item: ParsedItem, quantity: number, foods: Food[]): ParsedI
 
 export default function QuickLog({ foods, suggestions, onLog }: Props) {
   const [input, setInput] = useState('')
-  const [items, setItems] = useState<ParsedItem[]>([])
+  const [overrides, setOverrides] = useState<Record<string, Override>>({})
   const [meal, setMeal] = useState<MealType>('ناهار')
 
-  useEffect(() => {
-    setItems(parsePersianFood(input, foods))
-  }, [input, foods])
-
+  // Derived during render — no setState in an effect (avoids cascading renders).
+  const parsed = useMemo(() => parsePersianFood(input, foods), [input, foods])
+  const items = useMemo(
+    () => parsed
+      .filter((item) => !overrides[item.id]?.removed)
+      .map((item) => {
+        const quantity = overrides[item.id]?.quantity
+        return quantity === undefined ? item : recalculate(item, quantity, foods)
+      }),
+    [parsed, overrides, foods],
+  )
   const total = useMemo(() => items.reduce((sum, i) => sum + i.kcal, 0), [items])
 
+  const changeInput = (value: string) => {
+    setInput(value)
+    setOverrides({})
+  }
+
   const adjust = (index: number, delta: number) => {
-    setItems((prev) =>
-      prev.map((item, i) => {
-        if (i !== index) return item
-        const step = item.quantity % 1 === 0 ? 1 : 0.5
-        const next = Math.max(0.5, Math.round((item.quantity + delta * step) * 10) / 10)
-        return recalculate(item, next, foods)
-      }),
-    )
+    const target = items[index]
+    if (!target) return
+    const step = target.quantity % 1 === 0 ? 1 : 0.5
+    const next = Math.max(0.5, Math.round((target.quantity + delta * step) * 10) / 10)
+    setOverrides((prev) => ({ ...prev, [target.id]: { ...prev[target.id], quantity: next } }))
+  }
+
+  const remove = (index: number) => {
+    const target = items[index]
+    if (!target) return
+    setOverrides((prev) => ({ ...prev, [target.id]: { ...prev[target.id], removed: true } }))
   }
 
   const submit = () => {
     if (!items.length) return
     onLog(items, meal)
-    setInput('')
-    setItems([])
+    changeInput('')
   }
 
   return (
@@ -70,7 +86,7 @@ export default function QuickLog({ foods, suggestions, onLog }: Props) {
         dir="rtl"
         lang="fa"
         value={input}
-        onChange={(e) => setInput(e.target.value)}
+        onChange={(e) => changeInput(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') submit()
         }}
@@ -84,7 +100,7 @@ export default function QuickLog({ foods, suggestions, onLog }: Props) {
             <button
               key={`${s}-${i}`}
               type="button"
-              onClick={() => setInput(s)}
+              onClick={() => changeInput(s)}
               className="shrink-0 rounded-full border border-[var(--border)] bg-[#111113] px-2.5 py-1 text-[10px] text-[#B8B8C0] transition-colors hover:border-[#4A4A52]"
             >
               {s}
@@ -98,7 +114,7 @@ export default function QuickLog({ foods, suggestions, onLog }: Props) {
           {items.length > 0 ? (
             <>
               <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-[11px] text-[var(--muted)]">پیش‌نمایش زنده</span>
+                <span className="text-[11px] text-[var(--muted)]">پیشنمایش زنده</span>
                 <span className="num text-[11px] font-bold text-[var(--cal)]">
                   جمع: {fa(total)} کیلوکالری
                 </span>
@@ -136,7 +152,7 @@ export default function QuickLog({ foods, suggestions, onLog }: Props) {
                     <button
                       type="button"
                       aria-label={`حذف ${item.foodName}`}
-                      onClick={() => setItems((prev) => prev.filter((_, j) => j !== i))}
+                      onClick={() => remove(i)}
                       className="rounded-md p-1 text-[#6E6E76] hover:bg-[#2A2A30] hover:text-white"
                     >
                       <X size={12} />
@@ -159,6 +175,7 @@ export default function QuickLog({ foods, suggestions, onLog }: Props) {
             key={m}
             type="button"
             onClick={() => setMeal(m)}
+            aria-pressed={meal === m}
             className={`rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
               meal === m ? 'bg-[var(--cal)] text-[#201303]' : 'bg-[#1C1C20] text-[#A8A8B0]'
             }`}
@@ -180,5 +197,3 @@ export default function QuickLog({ foods, suggestions, onLog }: Props) {
     </section>
   )
 }
-
-export type { ParsedItem }

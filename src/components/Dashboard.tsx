@@ -5,6 +5,7 @@ import ProgressRing from './ProgressRing'
 
 type Props = {
   state: AppState
+  today: Date
   onDelete: (id: string) => void
   onRepeat: (entry: MealEntry) => void
   onSettings: () => void
@@ -16,8 +17,7 @@ const MACROS = [
   { key: 'fat', label: 'چربی', color: 'var(--fat)', unit: 'g' },
 ] as const
 
-export default function Dashboard({ state, onDelete, onRepeat, onSettings }: Props) {
-  const today = new Date()
+export default function Dashboard({ state, today, onDelete, onRepeat, onSettings }: Props) {
   const todayEntries = state.entries.filter((e) => e.date === dateKey(today))
 
   const totals = todayEntries.reduce(
@@ -85,9 +85,9 @@ export default function Dashboard({ state, onDelete, onRepeat, onSettings }: Pro
         </div>
       </section>
 
-      <section aria-label="وعده‌های امروز">
+      <section aria-label="وعدههای امروز">
         <div className="mb-2 flex items-center justify-between px-1">
-          <h2 className="text-sm font-bold">وعده‌های امروز</h2>
+          <h2 className="text-sm font-bold">وعدههای امروز</h2>
           <span className="num text-[11px] text-[var(--muted)]">{fa(todayEntries.length)} وعده</span>
         </div>
 
@@ -95,7 +95,7 @@ export default function Dashboard({ state, onDelete, onRepeat, onSettings }: Pro
           <div className="card px-4 py-8 text-center">
             <p className="text-3xl">🍽️</p>
             <p className="mt-2 text-xs text-[var(--muted)]">
-              هنوز غذایی ثبت نکرده‌اید. اولین وعده را بالا ثبت کنید.
+              هنوز غذایی ثبت نکردهاید. اولین وعده را بالا ثبت کنید.
             </p>
           </div>
         ) : (

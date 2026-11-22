@@ -1,44 +1,97 @@
 # کالری‌شمار روزمره
 
-ردیاب کالری و تغذیهٔ فارسی، موبایل‑محور و کاملاً محلی برای غذاهای خانگی ایرانی و واحدهای رایج خانه (کفگیر، کف دست، قاشق غذاخوری، لیوان و …).
+ردیاب کالری و تغذیهٔ فارسی، موبایلمحور و کاملاً محلی برای غذاهای خانگی ایرانی و واحدهای رایج خانه (کفگیر، کف دست، قاشق غذاخوری، لیوان و …).
 
-## اجرا
+**Persian RTL calorie tracker** for Iranian home-cooked meals, built with React + Vite + TypeScript. Fully local-first: all data stays in the browser.
+
+[![CI](https://github.com/persian25511-cyber/calorie-tracker-fa/actions/workflows/ci.yml/badge.svg)](https://github.com/persian25511-cyber/calorie-tracker-fa/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
+## فارسی
+
+### اجرای محلی
+
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm test         # تستهای واحد
+npm run test:coverage
+npm run build
+npm start        # preview روی http://localhost:4173
+```
+
+### قابلیتها
+
+- ثبت سریع به فارسی: «دو کفگیر قورمه سبزی و یک کف دست سنگک و نصف لیوان دوغ».
+- پارسر آفلاین و قطعی: اعداد فارسی/عربی/انگلیسی، واژههای عددی، نیمهها، ZWNJ و واحدهای سفارشی.
+- ۵۱ غذای ایرانی، ویرایش کامل و غذای سفارشی با واحد دلخواه.
+- حلقهٔ کالری، میلههای درشت مغذی، وعدهها، نمودار ۷ روزه و اهداف.
+- خروجی/بازیابی JSON، PWA نصبپذیر و فونت self-hosted (کارکرد آفلاین).
+
+### استقرار روی Vercel
+
+1. ریپو را به حساب Vercel متصل کنید: **Add New → Project → Import**.
+2. Vite بهطور خودکار شناسایی میشود: Build `npm run build`، Output `dist`.
+3. فایل `vercel.json` rewriting لازم برای SPA را اعمال میکند؛ نیازی به تنظیم دستی نیست.
+4. متغیرها: فقط `VITE_APP_NAME` اختیاری است (پیشفرض: کالری‌شمار روزمره). هیچ secret لازم نیست.
+5. با CLI هم میشود:
+
+```bash
+npm install -g vercel
+vercel          # preview
+vercel --prod   # production
+```
+
+### استقرار روی Railway
+
+`railway.json` / `railway.toml` منسوخ اند و سرویسهای جدید نمیتوانند از آنها استفاده کنند. این پروژه از **Infrastructure as Code** در `.railway/railway.ts` استفاده میکند.
+
+1. ریپو را در Railway انتخاب کنید: **New Project → Deploy from GitHub repo**.
+2. Railpack دستور build را مییابد. Start Command سرویس:
+
+```bash
+npx serve --single --listen $PORT dist
+```
+
+3. یا بهصورت IaC (توصیهشده):
+
+```bash
+npm install              # railway SDK نصب میشود
+npm install -g @railway/cli
+railway login
+railway link
+railway config plan      # پیشنمایش ایمن
+railway config apply     # اعمال
+```
+
+4. `PORT` توسط Railway تزریق میشود و نیازی به تعریف دستی نیست.
+5. Health check مسیر `/` است.
+
+### حریم خصوصی
+
+هیچ دادههای به سرور ارسال نمیشود، هیچ telemetryای وجود ندارد و هیچ کلیدی در مرورگر قرار داده نشده است. مقادیر تغذیهای تقریبیاند و توصیهٔ پزشکی نیستند.
+
+## English
+
+### Local development
 
 ```bash
 npm install
 npm run dev
+npm test
+npm run build
 ```
 
-آدرس پیشفرض: `http://localhost:5173`
+### Deploy to Vercel
 
-## دستورات
+Connect the repository at **Add New → Project → Import**. Vite is auto-detected (`npm run build`, output `dist`). The included `vercel.json` adds the required SPA rewrite. The only optional variable is `VITE_APP_NAME`; no secrets are needed. CLI alternative: `vercel` / `vercel --prod`.
 
-| دستور | کار |
-| --- | --- |
-| `npm test` | اجرای تست‌های واحد پارسر فارسی (Vitest) |
-| `npm run build` | بررسی TypeScript و ساخت نسخهٔ production |
-| `npm run preview` | مشاهدهٔ نسخهٔ ساخته‌شده |
+### Deploy to Railway
 
-## قابلیت‌ها
+Railway Config as Code (`railway.json`) is deprecated, so this repo ships `.railway/railway.ts` (Infrastructure as Code). Deploy from GitHub, or run `railway login && railway link && railway config apply`. The start command is `npx serve --single --listen $PORT dist` and the health check is `/`. `PORT` is injected by Railway.
 
-- **ثبت سریع به فارسی:** جملاتی مانند «دو کفگیر قورمه سبزی و یک کف دست سنگک و نصف لیوان دوغ» هنگام تایپ به تراشه‌های قابل ویرایش تبدیل می‌شوند.
-- **پارسر آفلاین و قطعی:** اعداد فارسی/عربی/انگلیسی، واژه‌های عددی (یک، دو، یه، نصف، نیم، یک و نیم)، تفاوت ZWNJ و حروف ی/ي و ک/ك، جداکننده‌های «و»، `+`، `،`، `,` و خط جدید.
-- **بانک غذاها:** ۵۱ غذای ایرانی با مقادیر تغذیه‌ای به ازای ۱۰۰ گرم و واحدهای خانگی، ویرایش کامل و افزودن غذای سفارشی با واحد دلخواه.
-- **داشبورد روزانه:** حلقهٔ کالری، میله‌های درشت مغذی، وعده‌ها بر اساس نوع وعده، تکرار و حذف.
-- **روند هفتگی:** نمودار ۷ روزه با خط هدف، میانگین و درصد درشت مغذی‌ها.
-- **تنظیمات و پشتیبان:** اهداف قابل تغییر، خروجی/بازیابی JSON، نصب به عنوان PWA.
-- **ذخیرهٔ محلی:** تمام داده‌ها در `localStorage` با کلید `calorie-tracker:v1`.
+See `.railway/README.md` and `.env.example`. Deployment docs: [Vercel/Vite](https://vercel.com/docs/frameworks/frontend/vite), [Railway IaC](https://docs.railway.com/infrastructure-as-code).
 
-## ساختار مهم
+### License & disclaimer
 
-- `src/utils/persianFoodParser.ts` — موتور تجزیهٔ زبان طبیعی فارسی
-- `src/utils/persianFoodParser.test.ts` — ۲۴ تست واحد
-- `src/data/iranianFoods.ts` — بانک غذاها و مقادیر تغذیه‌ای
-- `src/utils/storage.ts` — مدل داده و پایدارسازی محلی
-- `src/components/` — رابط کاربری RTL و تم تیره
-
-## وضعیت تأیید
-
-- `npm test`: ۲۴ از ۲۴ تست موفق
-- `npm run build`: موفق
-- تأیید مرورگری: نمای موبایل ۳۹۰×۸۴۴ و دسکتاپ، ثبت جملهٔ نمونه، پایداری پس از بارگذاری مجدد، غذای سفارشی با واحد سفارشی، نمودار هفتگی، بدون خطای کنسول یا سرریز افقی.
+MIT. Nutrition values are estimates and are not medical advice. All user data stays in localStorage; there is no backend and no analytics.

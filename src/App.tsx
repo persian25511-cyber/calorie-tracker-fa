@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Flame } from 'lucide-react'
-import Analytics from './components/Analytics'
 import BottomNav, { type Tab } from './components/BottomNav'
 import Dashboard from './components/Dashboard'
-import FoodBank from './components/FoodBank'
 import QuickLog from './components/QuickLog'
-import SettingsPanel from './components/SettingsPanel'
 import type { Food } from './data/iranianFoods'
 import { dateKey, fa, jalaliDate } from './utils/format'
+import type { ParsedItem } from './utils/persianFoodParser'
 import {
   initialState,
   loadState,
@@ -19,7 +17,10 @@ import {
   type MealItem,
   type MealType,
 } from './utils/storage'
-import type { ParsedItem } from './utils/persianFoodParser'
+
+const Analytics = lazy(() => import('./components/Analytics'))
+const FoodBank = lazy(() => import('./components/FoodBank'))
+const SettingsPanel = lazy(() => import('./components/SettingsPanel'))
 
 const DEFAULT_SUGGESTIONS = [
   'یک کفگیر برنج کته و یک کفگیر قورمه سبزی',
@@ -30,29 +31,54 @@ const DEFAULT_SUGGESTIONS = [
 
 const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
+function Loading() {
+  return (
+    <div className="card p-8 text-center text-xs text-[var(--muted)]" role="status">
+      در حال بارگذاری…
+    </div>
+  )
+}
+
 export default function App() {
   const [state, setState] = useState<AppState>(loadState)
   const [tab, setTab] = useState<Tab>('home')
   const [toast, setToast] = useState('')
+  const [today, setToday] = useState(() => new Date())
+  const storageWarned = useRef(false)
 
-  useEffect(() => saveState(state), [state])
+  useEffect(() => {
+    if (!saveState(state) && !storageWarned.current) {
+      storageWarned.current = true
+      setToast('ذخیرهٔ محلی ممکن نیست. از تنظیمات پشتیبان بگیرید.')
+    }
+  }, [state])
+
   useEffect(() => {
     if (!toast) return
     const timer = window.setTimeout(() => setToast(''), 2800)
     return () => window.clearTimeout(timer)
   }, [toast])
 
-  const todayCount = state.entries.filter((e) => e.date === dateKey()).length
+  useEffect(() => {
+    const onUpdate = () => setToast('نسخهٔ جدید موجود است، صفحه را بارگذاری مجدد کنید')
+    window.addEventListener('app-update-available', onUpdate)
+    return () => window.removeEventListener('app-update-available', onUpdate)
+  }, [])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (dateKey(new Date()) !== dateKey(today)) setToday(new Date())
+    }, 60_000)
+    return () => window.clearInterval(timer)
+  }, [today])
+
+  const todayCount = state.entries.filter((e) => e.date === dateKey(today)).length
 
   const suggestions = useMemo(() => {
     const fromHistory = state.entries
       .filter((e) => e.items.length > 1)
       .slice(0, 8)
-      .map((e) =>
-        e.items
-          .map((i) => `${fa(i.quantity)} ${i.unit} ${i.foodName}`)
-          .join(' و '),
-      )
+      .map((e) => e.items.map((i) => `${fa(i.quantity)} ${i.unit} ${i.foodName}`).join(' و '))
     return Array.from(new Set([...fromHistory, ...DEFAULT_SUGGESTIONS])).slice(0, 8)
   }, [state.entries])
 
@@ -70,37 +96,21 @@ export default function App() {
         prev.fat += p.fat
       } else {
         grouped.set(key, {
-          foodId: p.foodId,
-          foodName: p.foodName,
-          quantity: p.quantity,
-          unit: p.unit,
-          unitGrams: p.unitGrams,
-          grams: p.grams,
-          kcal: p.kcal,
-          protein: p.protein,
-          carbs: p.carbs,
-          fat: p.fat,
+          foodId: p.foodId, foodName: p.foodName, quantity: p.quantity,
+          unit: p.unit, unitGrams: p.unitGrams, grams: p.grams, kcal: p.kcal,
+          protein: p.protein, carbs: p.carbs, fat: p.fat,
         })
       }
     }
     const items = [...grouped.values()]
-    const entry: MealEntry = {
-      id: newId(),
-      date: dateKey(),
-      meal,
-      items,
-      loggedAt: Date.now(),
-    }
+    const entry: MealEntry = { id: newId(), date: dateKey(today), meal, items, loggedAt: Date.now() }
     setState((prev) => ({ ...prev, entries: [entry, ...prev.entries] }))
     const total = items.reduce((s, i) => s + i.kcal, 0)
     setToast(`✅ ${meal} ثبت شد · ${fa(total)} کیلوکالری`)
   }
 
   const handleRepeat = (entry: MealEntry) => {
-    handleLog(
-      entry.items.map((i) => ({ ...i, id: newId() }) as ParsedItem),
-      entry.meal,
-    )
+    handleLog(entry.items.map((i) => ({ ...i, id: newId() }) as ParsedItem), entry.meal)
   }
 
   const handleDelete = (id: string) => {
@@ -135,7 +145,7 @@ export default function App() {
             </span>
             <div>
               <h1 className="text-sm font-extrabold leading-tight">کالری‌شمار روزمره</h1>
-              <p className="num text-[10px] text-[var(--muted)]">{jalaliDate()}</p>
+              <p className="num text-[10px] text-[var(--muted)]">{jalaliDate(today)}</p>
             </div>
           </div>
           <span className="rounded-full border border-[var(--border)] bg-[#161618] px-2.5 py-1 text-[10px] text-[#B8B8C0]">
@@ -150,24 +160,31 @@ export default function App() {
             <QuickLog foods={state.foods} suggestions={suggestions} onLog={handleLog} />
             <Dashboard
               state={state}
+              today={today}
               onDelete={handleDelete}
               onRepeat={handleRepeat}
               onSettings={() => setTab('settings')}
             />
           </div>
         )}
-        {tab === 'analytics' && <Analytics state={state} />}
+        {tab === 'analytics' && (
+          <Suspense fallback={<Loading />}><Analytics state={state} /></Suspense>
+        )}
         {tab === 'foods' && (
-          <FoodBank foods={state.foods} onSave={handleSaveFood} onDelete={handleDeleteFood} />
+          <Suspense fallback={<Loading />}>
+            <FoodBank foods={state.foods} onSave={handleSaveFood} onDelete={handleDeleteFood} />
+          </Suspense>
         )}
         {tab === 'settings' && (
-          <SettingsPanel
-            state={state}
-            onGoals={(goals: Goals) => setState((prev) => ({ ...prev, goals }))}
-            onImport={handleImport}
-            onReset={() => setState(initialState())}
-            notify={setToast}
-          />
+          <Suspense fallback={<Loading />}>
+            <SettingsPanel
+              state={state}
+              onGoals={(goals: Goals) => setState((prev) => ({ ...prev, goals }))}
+              onImport={handleImport}
+              onReset={() => setState(initialState())}
+              notify={setToast}
+            />
+          </Suspense>
         )}
       </main>
 

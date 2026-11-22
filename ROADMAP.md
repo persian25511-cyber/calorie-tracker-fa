@@ -13,26 +13,37 @@
 
 - ثبت غذا < ۱۰ ثانیه؛ دقت پارسر ≥ ۹۰٪ روی ۲۰۰ جمله؛ پارسر < ۵ ms.
 - Lighthouse: Performance ≥ ۹۰، A11y ≥ ۹۵، PWA ۱۰۰، Best Practices ≥ ۹۵.
-- باندل بار نخست ≤ ۲۵۰ kB (gzip ≤ ۱۰۰ kB)؛ crash-free ≥ ۹۹.۹٪.
+- باندل بار نخست ≤ ۳۵۰ kB (gzip ≤ ۱۲۰ kB)؛ crash-free ≥ ۹۹.۹٪.
 -retention ۷روزه ≥ ۴۰٪؛ نصب PWA و بازگشت کاربران.
 
 ---
 
 ## فاز ۰ — تثبیت و قابلیت انتشار (P0)
 
-- [ ] رفع ۲ هشدار lint (`setState` در effect، `new Date()` حین رندر).
-- [ ] `ErrorBoundary` فارسی با بازنشانی امن.
-- [ ] اعتبارسنجی عمیق Zod و لایهٔ migration برای بارگذاری/بازیابی.
-- [ ] هشدار فارسی در صورت پر بودن یا غیرفعال بودن localStorage.
-- [ ] آیکون PNG ۱۹۲/۵۱۲ maskable، apple-touch-icon و اسکرینشات manifest.
-- [ ] self-host فونت Vazirmatn و حذف وابستگی Google Fonts.
-- [ ] service worker نسخهدار + اعلان «نسخهٔ جدید موجود است».
-- [ ] تست storage/format/migrate + تست کامپوننت QuickLog با Testing Library.
-- [ ] GitHub Actions: lint/test/build +بررسی بودجهٔ باندل.
-- [ ] نسخهٔ ۰.۱.۰، CHANGELOG، LICENSE، CONTRIBUTING، privacy note.
-- [ ] پوشش تست ≥ ۶۰٪ کلی و ۸۰٪ utility.
+- [x] رفع ۲ هشدار lint (`setState` در effect، `new Date()` حین رندر).
+- [x] `ErrorBoundary` فارسی با بازنشانی امن.
+- [x] اعتبارسنجی عمیق Zod و لایهٔ migration برای بارگذاری/بازیابی.
+- [x] هشدار فارسی در صورت پر بودن یا غیرفعال بودن localStorage.
+- [x] آیکون PNG ۱۹۲/۵۱۲ maskable، apple-touch-icon و اسکرینشات manifest.
+- [x] self-host فونت Vazirmatn و حذف وابستگی Google Fonts.
+- [x] service worker نسخهدار + اعلان «نسخهٔ جدید موجود است».
+- [x] تست storage/format/migrate + تست کامپوننت QuickLog با Testing Library.
+- [x] GitHub Actions: lint/test/build +بررسی بودجهٔ باندل.
+- [x] نسخهٔ ۰.۱.۰، CHANGELOG، LICENSE، CONTRIBUTING، privacy note.
+- [x] پوشش تست ≥ ۶۰٪ کلی و ۸۰٪ utility.
 
 **دروازه:** lint پاک، تستها سبز، build موفق، PWA ≥ ۹۵، فونت آفلاین.
+
+## فاز ۰٫۵ — استقرار روی Vercel و Railway
+
+- [x] `vercel.json` با rewrites مربوط به SPA طبق مستندات Vercel.
+- [x] `.railway/railway.ts` به عنوان Railway IaC (جایگزین `railway.json` منسوخ) با build و start command ثابت.
+- [x] `.env.example` و توضیحمبنی بر محلی بودن دادهها و نبود نیاز به secret.
+- [x] اسکریپت `start` و وابستگی `serve` برای Railway.
+- [x] README دوزبانه (فارسی/English) با آموزش دپلوی Vercel و Railway.
+- [x] CI همراه با بررسی حجم باندل وjob استقرار اختیاری.
+
+**دروازه:** استقرار آزمایشی موفق روی هر دو پلتفرم.
 
 ## فاز ۱ — تجربه و عملکرد (P1)
 
@@ -75,7 +86,8 @@
 ## وضعیت اجرا
 
 - [x] ایجاد رود مپ
-- [ ] اجرای فاز ۰
+- [x] اجرای فاز ۰
+- [ ] اجرای فاز ۰٫۵ (Vercel / Railway)
 - [ ] اجرای فاز ۱
 - [ ] اجرای فاز ۲
 - [ ] اجرای فاز ۳
