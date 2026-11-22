@@ -50,7 +50,7 @@ vercel --prod   # production
 2. Railpack دستور build را مییابد. Start Command سرویس:
 
 ```bash
-npx serve --single --listen $PORT dist
+npm start
 ```
 
 3. یا بهصورت IaC (توصیهشده):
@@ -88,7 +88,7 @@ Connect the repository at **Add New → Project → Import**. Vite is auto-detec
 
 ### Deploy to Railway
 
-Railway Config as Code (`railway.json`) is deprecated, so this repo ships `.railway/railway.ts` (Infrastructure as Code). Deploy from GitHub, or run `railway login && railway link && railway config apply`. The start command is `npx serve --single --listen $PORT dist` and the health check is `/`. `PORT` is injected by Railway.
+Railway Config as Code (`railway.json`) is deprecated, so this repo ships `.railway/railway.ts` (Infrastructure as Code). Deploy from GitHub, or run `railway login && railway link && railway config apply`. The start command is `npm start` (reads the injected `PORT`) and the health check is `/`. IaC is applied manually with `railway config apply` — a git push does not apply it; alternatively set Build/Start commands in the Railway dashboard. `PORT` is injected by Railway.
 
 See `.railway/README.md` and `.env.example`. Deployment docs: [Vercel/Vite](https://vercel.com/docs/frameworks/frontend/vite), [Railway IaC](https://docs.railway.com/infrastructure-as-code).
 

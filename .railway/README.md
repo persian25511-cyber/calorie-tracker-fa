@@ -11,6 +11,8 @@ npm install          # installs the `railway` TypeScript SDK too
 npm install -g @railway/cli
 railway login
 railway link         # link this directory to your Railway project/environment
+# Hermes/npm environments that block install scripts need:
+# npm install -g @railway/cli --allow-scripts=@railway/cli
 ```
 
 ## Plan and apply
@@ -27,8 +29,18 @@ railway config plan --out railway-plan.json
 railway config apply --plan railway-plan.json --yes --confirm-destructive
 ```
 
-The service runs `npm run build`, then serves `dist` with
-`serve --single --listen $PORT dist`. `serve` is a devDependency and is
-installed by Railpack before the build.
+The service runs `npm run build`, then `npm start`. The start script reads
+the `PORT` injected by Railway (fallback 4173 locally), so a GitHub-triggered
+deploy works even before IaC is applied.
 
 See https://docs.railway.com/infrastructure-as-code
+
+## If you deployed from GitHub without applying IaC
+
+IaC is **not** applied automatically by a push. Set these two fields in
+Railway service settings → Build & Deploy, then redeploy:
+
+- Build Command: `npm run build`
+- Start Command: `npm start`
+
+Healthcheck path: `/`. No environment variables are required.

@@ -5,7 +5,7 @@ import { defineRailway, project, service } from "railway/iac";
 export default defineRailway(() => {
   const web = service("web", {
     build: "npm run build",
-    start: "npx serve --single --listen $PORT dist",
+    start: "npm start",
     healthcheck: "/",
   });
 
