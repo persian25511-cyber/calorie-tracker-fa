@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Tests with coverage
+        run: npm run test:coverage
+      - name: Type check and build
+        run: npm run build
+      - name: Bundle budget (largest JS chunk < 450 kB)
+        run: |
+          LARGEST=$(find dist/assets -name '*.js' -printf '%s\n' | sort -rn | head -1)
+          echo "Largest JS chunk: $LARGEST bytes"
+          if [ "$LARGEST" -gt 450000 ]; then
+            echo "Bundle budget exceeded"
+            exit 1
+          fi
